@@ -3,9 +3,9 @@
 { lib
 , python
 , wrapPython
-, setuptools
 , unzip
 , ensureNewerSourcesHook
+, setuptools
 }:
 
 { name
@@ -67,10 +67,11 @@ python.stdenv.mkDerivation (builtins.removeAttrs attrs ["disabled"] // {
   buildInputs = [ wrapPython ] ++ buildInputs ++ pythonPath
     ++ [ (ensureNewerSourcesHook { year = "1980"; }) ]
     ++ (lib.optional (lib.hasSuffix "zip" attrs.src.name or "") unzip)
-    ++ lib.optionals doCheck checkInputs;
+    ++ lib.optionals doCheck checkInputs
+    ++ lib.optional catchConflicts setuptools; # setuptools contains pkg_resources
 
   # propagate python/setuptools to active setup-hook in nix-shell
-  propagatedBuildInputs = propagatedBuildInputs ++ [ python setuptools ];
+  propagatedBuildInputs = propagatedBuildInputs ++ [ python ];
 
   # Python packages don't have a checkPhase, only an installCheckPhase
   doCheck = false;
@@ -79,8 +80,9 @@ python.stdenv.mkDerivation (builtins.removeAttrs attrs ["disabled"] // {
   postFixup = ''
     wrapPythonPrograms
   '' + lib.optionalString catchConflicts ''
-    # check if we have two packages with the same name in closure and fail
-    # this shouldn't happen, something went wrong with dependencies specs
+    # Check if we have two packages with the same name in closure.
+    # If that's the case, fail, because we shouldn't have multiple versions
+    # of one Python package in a closure. Check the dependencies.
     ${python.interpreter} ${./catch_conflicts.py}
   '' + attrs.postFixup or '''';
 
