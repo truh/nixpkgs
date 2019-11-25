@@ -11,15 +11,15 @@ let
   promtoolCheck = what: name: file:
     pkgs.runCommand
       "${name}-${replaceStrings [" "] [""] what}-checked"
-      { buildInputs = [ cfg.package ]; } ''
+      { nativeBuildInputs = [ cfg.package ]; } ''
     ln -s ${file} $out
     promtool ${what} $out
   '';
 
   # Pretty-print JSON to a file
   writePrettyJSON = name: x:
-    pkgs.runCommand name { preferLocalBuild = true; } ''
-      echo '${builtins.toJSON x}' | ${pkgs.jq}/bin/jq . > $out
+    pkgs.runCommand name { preferLocalBuild = true; nativeBuildInputs = [ pkgs.jq ]; } ''
+      echo '${builtins.toJSON x}' | jq . > $out
     '';
 
   generatedPrometheusYml = writePrettyJSON "prometheus.yml" promConfig;
