@@ -102,11 +102,14 @@ in
         HTTP_AUTHORIZATION = cfg.httpAuthorization;
         ALLOW_PLANTUML_INCLUDE = if cfg.allowPlantumlInclude then "true" else "false";
       };
-      script =''${pkgs.jre}/bin/java \
-        -jar ${pkgs.jetty-runner}/lib/jetty-runner.jar \
-          --host ${cfg.listenHost} \
-          --port ${builtins.toString cfg.listenPort} \
-          ${cfg.package}/webapps/plantuml.war
+      script = ''
+      ${pkgs.jre}/bin/java \
+        -jar ${pkgs.jetty}/start.jar \
+          --module=deploy,http,jsp \
+          jetty.home=${pkgs.jetty} \
+          jetty.base=${cfg.package} \
+          jetty.http.host=${cfg.listenHost} \
+          jetty.http.port=${builtins.toString cfg.listenPort}
       '';
       serviceConfig = {
         User = cfg.user;

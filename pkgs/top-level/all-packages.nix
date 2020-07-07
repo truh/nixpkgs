@@ -15921,7 +15921,6 @@ in
   jboss_mysql_jdbc = callPackage ../servers/http/jboss/jdbc/mysql { };
 
   jetty = callPackage ../servers/http/jetty { };
-  jetty-runner = callPackage ../servers/http/jetty-runner { };
 
   kapow = callPackage ../servers/kapow { };
 
