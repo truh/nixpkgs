@@ -37,15 +37,15 @@ in
         description = "Home directory of the PlantUML server instance.";
       };
 
-      listenAddress = mkOption {
+      listenHost = mkOption {
         type = types.str;
         default = "127.0.0.1";
-        description = "Address to listen on.";
+        description = "Host to listen on.";
       };
 
       listenPort = mkOption {
         type = types.int;
-        default = 8081;
+        default = 8080;
         description = "Port to listen on.";
       };
 
@@ -68,7 +68,7 @@ in
       };
 
       httpAuthorization = mkOption {
-        type = types.str;
+        type = types.nullOr types.str;
         default = null;
         description = "When calling the proxy endpoint, the value of HTTP_AUTHORIZATION will be used to set the HTTP Authorization header.";
       };
@@ -81,39 +81,37 @@ in
     };
   };
 
-  config = {
-    mkIf cfg.enable {
-      users.users.${cfg.user} = {
-        isSystemUser = true;
-        group = cfg.group;
-        home = cfg.home;
-        createHome = true;
+  config = mkIf cfg.enable {
+    users.users.${cfg.user} = {
+      isSystemUser = true;
+      group = cfg.group;
+      home = cfg.home;
+      createHome = true;
+    };
+
+    users.groups.${cfg.group} = {};
+
+    systemd.services.plantuml-server = {
+      description = "PlantUML server";
+      wantedBy = [ "multi-user.target" ];
+      path = [ cfg.home ];
+      environment = {
+        PLANTUML_LIMIT_SIZE = builtins.toString cfg.plantumlLimitSize;
+        GRAPHVIZ_DOT = "${cfg.graphvizPackage}/bin/dot";
+        PLANTUML_STATS = if cfg.plantumlStats then "on" else "off";
+        HTTP_AUTHORIZATION = cfg.httpAuthorization;
+        ALLOW_PLANTUML_INCLUDE = if cfg.allowPlantumlInclude then "true" else "false";
       };
-
-      users.groups.${cfg.group} = {};
-
-      systemd.services.plantuml-server = {
-        description = "PlantUML server";
-        wantedBy = [ "multi-user.target" ];
-        path = [ cfg.home ];
-        environment = {
-          PLANTUML_LIMIT_SIZE = cfg.plantumlLimitSize;
-          GRAPHVIZ_DOT = "${cfg.graphvizPackage}/bin/dot";
-          PLANTUML_STATS = cfg.plantumlStats;
-          HTTP_AUTHORIZATION = cfg.httpAuthorization;
-          ALLOW_PLANTUML_INCLUDE = cfg.allowPlantumlInclude;
-        };
-        script =''${jre}/bin/java \
-          -jar ${pkgs.jetty-runner}/lib/jetty-runner.jar \
-            --host ${cfg.listenHost} \
-            --port ${cfg.listenPort} \
-            ${cfg.package}/webapps/plantuml.war
-        '';
-        serviceConfig = {
-          User = cfg.user;
-          Group = cfg.group;
-          PrivateTmp = true;
-        };
+      script =''${pkgs.jre}/bin/java \
+        -jar ${pkgs.jetty-runner}/lib/jetty-runner.jar \
+          --host ${cfg.listenHost} \
+          --port ${builtins.toString cfg.listenPort} \
+          ${cfg.package}/webapps/plantuml.war
+      '';
+      serviceConfig = {
+        User = cfg.user;
+        Group = cfg.group;
+        PrivateTmp = true;
       };
     };
   };
