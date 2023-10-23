@@ -122,7 +122,7 @@ in
       script = ''
       ${cfg.packages.jdk}/bin/java \
         -jar ${cfg.packages.jetty}/start.jar \
-          --module=deploy,http,jsp \
+          --module=deploy,http,ee8-jsp \
           jetty.home=${cfg.packages.jetty} \
           jetty.base=${cfg.package} \
           jetty.http.host=${cfg.listenHost} \
