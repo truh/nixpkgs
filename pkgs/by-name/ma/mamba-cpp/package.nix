@@ -39,6 +39,11 @@ stdenv.mkDerivation {
     (lib.cmakeBool "BUILD_LIBMAMBA" false)
   ];
 
+  postInstall = ''
+    mkdir -p $out/bin
+    ln -s $out/bin/mamba $out/bin/micromamba
+  '';
+
   nativeInstallCheckInputs = [ versionCheckHook ];
 
   meta = with lib; {
